@@ -8,31 +8,31 @@ class Walrus
   def initialize options = {}
 
     @s3_endpoint = options[:s3_endpoint]
-	@s3_port = options[:s3_port]
-	@s3_service_path = options[:s3_service_path]
-	@access_key_id = options[:access_key_id]
-	@secret_access_key = options[:secret_access_key]
-	@use_ssl = options[:use_ssl]
-	@s3_force_path_style = options[:s3_force_path_style]
-	@logging  = options[:logging]
+    @s3_port = options[:s3_port]
+    @s3_service_path = options[:s3_service_path]
+    @access_key_id = options[:access_key_id]
+    @secret_access_key = options[:secret_access_key]
+    @use_ssl = options[:use_ssl]
+    @s3_force_path_style = options[:s3_force_path_style]
+    @logging  = options[:logging]
 
-	if @logging
-		# TODO:
-	end
+    if @logging
+      # TODO:
+    end
 
-	# Prepare
-	AWS.config({
-		:access_key_id => @access_key_id,
-		:secret_access_key => @secret_access_key,
-		:s3_endpoint => @s3_endpoint,
-		:s3_port => @s3_port,
-		:s3_service_path => @s3_service_path,
-		:s3_force_path_style => @s3_force_path_style,
-		:use_ssl => @use_ssl,
-	})
+    # Prepare
+    AWS.config({
+      :access_key_id => @access_key_id,
+      :secret_access_key => @secret_access_key,
+      :s3_endpoint => @s3_endpoint,
+      :s3_port => @s3_port,
+      :s3_service_path => @s3_service_path,
+      :s3_force_path_style => @s3_force_path_style,
+      :use_ssl => @use_ssl,
+    })
 
-	# Create
-	@s3 = AWS::S3.new
+    # Create
+    @s3 = AWS::S3.new
 
   end
 
@@ -64,7 +64,6 @@ class Walrus
   attr_reader :logging
 
   def create_bucket(bucket_name)
-
     # Create the bucket
     begin
       bucket = s3.buckets.create(bucket_name)
@@ -72,7 +71,6 @@ class Walrus
       puts e.message
       puts e.backtrace
     end
-	
   end
 
   def delete_bucket(bucket_name)
@@ -96,7 +94,6 @@ class Walrus
   end
 
   def list_all_buckets()
-
     #List all the buckets in this account
     begin
       s3.buckets.each do |bucket|
@@ -106,7 +103,6 @@ class Walrus
       puts e.message
       puts e.backtrace
     end
-
   end
 
 end

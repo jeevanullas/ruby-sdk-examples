@@ -6,7 +6,6 @@ require 'logger'
 class Walrus
 
   def initialize options = {}
-
     @s3_endpoint = options[:s3_endpoint]
     @s3_port = options[:s3_port]
     @s3_service_path = options[:s3_service_path]
@@ -29,11 +28,14 @@ class Walrus
       :s3_service_path => @s3_service_path,
       :s3_force_path_style => @s3_force_path_style,
       :use_ssl => @use_ssl,
+      :logger => Logger.new($stdout),
+      :log_level => :debug,
+      :log_formatter => AWS::Core::LogFormatter.colored,
+      :http_wire_trace => true,
     })
 
     # Create
     @s3 = AWS::S3.new
-
   end
 
   # S3 object
@@ -66,38 +68,138 @@ class Walrus
   def create_bucket(bucket_name)
     # Create the bucket
     begin
-      bucket = s3.buckets.create(bucket_name)
+      if check_bucket(bucket_name)
+        raise "Bucket already exists"
+      else
+        bucket = s3.buckets.create(bucket_name)
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+      return false
+    end
+    return true
+  end
+
+  def delete_bucket(bucket_name)
+    # Delete the bucket
+    begin
+      if check_bucket(bucket_name)
+      	bucket = s3.buckets[bucket_name] # makes no request
+        bucket.delete!
+      else
+      	raise "Bucket does not exists"
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+      return false
+    end
+    return true
+  end
+
+  def upload_file(bucket_name, key, filename_with_path)
+    # Upload file to a bucket
+    begin
+      if check_bucket(bucket_name)
+        if check_object(bucket_name, key)
+          raise "Object already exists"
+        else
+          bucket = s3.buckets[bucket_name]
+          object = bucket.objects.create(key, filename_with_path)
+          object.write(:file => filename_with_path)
+        end
+      else
+      	raise "Bucket does not exists"
+      end
+    rescue => e
+    	puts e.message
+    	puts e.backtrace
+    	return false
+    end
+    return true
+  end
+
+  def check_object(bucket_name, key)
+    # Check if the object exists or not
+    begin
+      object = s3.buckets[bucket_name].objects[key] # makes no request
+      if object.exists?
+        return true
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+    end
+    return false
+  end
+
+  def check_bucket(bucket_name)
+    # Check if bucket exists
+    begin
+      bucket = s3.buckets[bucket_name] # makes no request
+      if bucket.exists?
+        return true
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+    end
+    return false
+  end
+
+  def delete_object(bucket_name, key)
+    # Delete the object
+    begin
+      if check_object(bucket_name, key)
+      	object = s3.buckets[bucket_name].objects[key]
+        object.delete
+        return true
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+    end
+    return false
+  end
+
+  def list_all_objects(bucket_name)
+    begin
+      if check_bucket(bucket_name)
+      	bucket = s3.buckets[bucket_name] 
+        bucket.objects.each do |object|
+          puts object.key
+        end
+      end
     rescue => e
       puts e.message
       puts e.backtrace
     end
   end
 
-  def delete_bucket(bucket_name)
-
-  end
-
-  def upload_file(bucket_name, filename)
-
-  end
-
-  def check_bucket(bucket_name)
-
-  end
-
-  def delete_object(bucket_name, key)
-
-  end
-
-  def download_file(bucket_name, key)
-
+  def download_file(bucket_name, key, filename_with_path)
+    begin
+      if check_object(bucket_name, key)
+        object = s3.buckets[bucket_name].objects[key]
+        File.open(filename_with_path, 'w') do |file|
+          object.read do |chunk|
+            file.write(chunk)
+          end
+        end
+        return true
+      end
+    rescue => e
+      puts e.message
+      puts e.backtrace
+    end
+    return false
   end
 
   def list_all_buckets()
     #List all the buckets in this account
     begin
       s3.buckets.each do |bucket|
-      puts bucket.name
+        puts bucket.name
       end
     rescue => e
       puts e.message
